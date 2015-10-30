@@ -12,117 +12,156 @@
     componentCls: 'app',
 	launch: function() {
 		
-		// Radian
-		var project_oid = '/project/37192747640';
-
-		this.add({
-			xtype: 'rallycombobox',
-			stateful: true,
-			stateId: this.getContext().getScopedStateId('initiative'),
-			width: 600,
-			fieldLabel: 'Select Initiative:',
-			// Display Template
-			displayTpl: Ext.create('Ext.XTemplate','<tpl for=".">','{FormattedID} - {Name}','</tpl>'),
-			// List Template
-			tpl: Ext.create('Ext.XTemplate','<tpl for=".">','<div class="x-boundlist-item">{FormattedID} - {Name}</div>','</tpl>'),
-			storeConfig: {
-				autoLoad: true,
-				model: 'PortfolioItem/Initiative',
-				fetch: ['FormattedID', 'Name'],
-				sorters: [
-					{
-						property: 'ObjectID',
-						direction: 'ASC'
-					}
-				],
-				remoteGroup: false,
-				remoteSort: false,
-				remoteFilter: false,
-				limit: Infinity,
-				context: {
-					project: project_oid,
-					projectScopeDown: true,
-					projectScopeUp: false
-				}
+		// Program Risk Log
+		var project_oid = '/project/40886178637';
+		
+		Ext.create('Rally.data.wsapi.Store', {
+			model: 'userstory',
+			autoLoad: true,
+			context: {
+				project: project_oid,
+				projectScopeDown: true,
+				projectScopeUp: false
 			},
 			listeners: {
-				// select: this._onSelect,
-				select: this._onLoad,
-				ready: this._onLoad,
+				load: this._onDataLoaded,
 				scope: this
-			}
+			},
+			fetch: ['FormattedID', 'Name', 'Owner', 'c_RiskLikelihood', 'c_RiskImpact', 'c_RiskStatus', 'CreationDate']
 		});
 	},
+
+	_onDataLoaded: function(store, data) {
 		
-	_onLoad: function() {
-		var project_oid = '/project/37192747640';
-		
-		if (this.down('#features')) {
-			this.down('#features').destroy();
+		function formatDate(dateString) {
+			if(!dateString) { return ''; }
+			thisYear = dateString.getFullYear();
+			thisMonth = ("0" + (dateString.getMonth() + 1)).slice(-2);
+			thisDay = ("0" + dateString.getDate()).slice(-2);
+
+			thisDate = thisMonth + "/" + thisDay + "/" + thisYear;
+			return(thisDate);
 		}
 		
-		this.add({
-			id: 'features',
-			xtype: 'rallygridboard',
-			modelNames: ['PortfolioItem/Feature'],
-			toggleState: 'board',
-			context: this.getContext(),
-			storeConfig: {
-				context: {
-					project: project_oid,
-					projectScopeDown: true,
-					projectScopeUp: false
-				},
-				filters: [this._getFilter()]
-			},
-			// columnConfig: {
-				// plugins: [
-					// {ptype: 'rallycolumncardcounter'}
-				// ]
-			// },
-            cardBoardConfig: {
-                attribute: 'State',
-				fetch: ['Project', 'PercentDoneByStoryCount'],
-				cardConfig: {
-					xtype: 'rallycard',
-					fields: ['State','Project'],
-					showIconsAndHighlightBorder: false,
-					editable: false,
-					showAge: true
-				},
-				columnConfig: {
-					plugins: [
-						{ptype: 'rallycolumncardcounter'}
-					]
-				}
-				// plugins: [{ptype:'rallyfixedheadercardboard'}]
-            },
-			plugins: [
-				{
-					ptype: 'rallygridboardfieldpicker',
-					modelNames: ['PortfolioItem/Feature'],
-					headerPosition: 'left'
-				}, {
-                    ptype: 'rallygridboardcustomfiltercontrol',
-					headerPosition: 'left',
-                    filterControlConfig: {
-						modelNames: ['PortfolioItem/Feature']
-					}
-                }
-			]
+		var records = _.map(data, function(record) {
+			//// Perform custom actions with the data here'
+			// if ('' !== record.get('c_RiskLikelihood')){
+				// var regExp = /\(([^)]+)\)/;
+				// var likelymatches = regExp.exec(record.get('c_RiskLikelihood'));
+				// var likely = Ext.num(likelymatches[1]);
+				// var impactmatches = regExp.exec(record.get('c_RiskImpact'));
+				// var impact = Ext.num(impactmatches[1]);
+				//// Calculations, etc.
+				// return Ext.apply({
+					// Exposure: Ext.num(likely * impact)
+				// }, record.getData());
+			// }else{
+				// return Ext.apply({
+					// Exposure: 0
+				// }, record.getData());
+			// }
 		});
-	},
-		
-	_getFilter: function() {
-		var combo = this.down('rallycombobox');
-		return {
-			property: 'Parent.Parent',
-			operator: '=',
-			value: combo.getValue()
-		};
-	}
 
+		function sean(record) {
+			if ('' !== record.get('c_RiskLikelihood')){
+				var regExp = /\(([^)]+)\)/;
+				var likelymatches = regExp.exec(record.get('c_RiskLikelihood'));
+				var likely = Ext.num(likelymatches[1]);
+				var impactmatches = regExp.exec(record.get('c_RiskImpact'));
+				var impact = Ext.num(impactmatches[1]);
+				return (Ext.num(likely * impact));
+				//Calculations, etc.
+				// return Ext.apply({
+					// Exposure: Ext.num(likely * impact)
+				// }, record.getData());
+			}else{
+				return 0;
+				// return Ext.apply({
+					// Exposure: 0
+				// }, record.getData());
+			}
+		}
+
+		if (!this.down('#risks')) {
+		
+			this.add({
+				xtype: 'rallygrid',
+				id: 'risks',
+				width: '99%',
+				showPagingToolbar: true,
+				enableEditing: true,
+				// enableBulkEdit: true,
+				// store: Ext.create('Rally.data.custom.Store', {
+					// data: records
+				// }),
+				store: store,
+				listeners: {
+					load: this._onGridLoaded,
+					scope: this
+				},
+				columnCfgs: [
+					{
+						xtype: 'templatecolumn',
+						text: 'ID',
+						dataIndex: 'FormattedID',
+						width: 100,
+						tpl: Ext.create('Rally.ui.renderer.template.FormattedIDTemplate')
+					},
+					{
+						text: 'Name',
+						dataIndex: 'Name',
+						flex: 1
+					},
+					{
+						text: 'Owner',
+						dataIndex: 'Owner',
+						renderer: function(value) {
+							if(!value){
+								return '';
+							}else{
+								return value._refObjectName;
+							}
+						}
+					},	
+					{
+						text: 'Risk Likelihood',
+						dataIndex: 'c_RiskLikelihood',
+					},
+					{
+						text: 'Risk Impact',
+						dataIndex: 'c_RiskImpact'
+					},
+					{
+						text: 'Exposure (L * I)',
+						// doSort: function(state) {
+							// console.log("SORTING");
+						// },
+						renderer: function(value,meta,record) {
+							return sean(record);
+						}
+					},
+					{
+						text: 'Risk Status',
+						dataIndex: 'c_RiskStatus'
+					},
+					{
+						text: 'Creation Date',
+						dataIndex: 'CreationDate',
+						renderer: function(value) {
+							return formatDate(value);
+						}
+					}
+				]
+			});
+		
+		}
+	},
+	
+	_onGridLoaded: function(){
+		console.log("LOADED GRID");
+	}
 });
+
 
             Rally.launchApp('CustomApp', {
                 name:"Program Risk Log",
