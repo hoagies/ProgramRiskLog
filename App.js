@@ -54,6 +54,7 @@ Ext.define('CustomApp', {
 
 		this.add({
 			xtype: 'rallygrid',
+			width: '99%',
 			showPagingToolbar: false,
 			showRowActionsColumn: false,
 			editable: false,
