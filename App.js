@@ -35,34 +35,54 @@ Ext.define('CustomApp', {
 		}
 		
 		var records = _.map(data, function(record) {
-			//Perform custom actions with the data here'
-			console.log(data.length);
+			//// Perform custom actions with the data here'
+			// if ('' !== record.get('c_RiskLikelihood')){
+				// var regExp = /\(([^)]+)\)/;
+				// var likelymatches = regExp.exec(record.get('c_RiskLikelihood'));
+				// var likely = Ext.num(likelymatches[1]);
+				// var impactmatches = regExp.exec(record.get('c_RiskImpact'));
+				// var impact = Ext.num(impactmatches[1]);
+				//// Calculations, etc.
+				// return Ext.apply({
+					// Exposure: Ext.num(likely * impact)
+				// }, record.getData());
+			// }else{
+				// return Ext.apply({
+					// Exposure: 0
+				// }, record.getData());
+			// }
+		});
+
+		function sean(record) {
 			if ('' !== record.get('c_RiskLikelihood')){
 				var regExp = /\(([^)]+)\)/;
 				var likelymatches = regExp.exec(record.get('c_RiskLikelihood'));
 				var likely = Ext.num(likelymatches[1]);
 				var impactmatches = regExp.exec(record.get('c_RiskImpact'));
 				var impact = Ext.num(impactmatches[1]);
+				return (Ext.num(likely * impact));
 				//Calculations, etc.
-				return Ext.apply({
-					Exposure: Ext.num(likely * impact)
-				}, record.getData());
+				// return Ext.apply({
+					// Exposure: Ext.num(likely * impact)
+				// }, record.getData());
 			}else{
-				return Ext.apply({
-					Exposure: 0
-				}, record.getData());
+				return 0;
+				// return Ext.apply({
+					// Exposure: 0
+				// }, record.getData());
 			}
-		});
+		}
 
 		this.add({
 			xtype: 'rallygrid',
 			width: '99%',
 			showPagingToolbar: true,
-			showRowActionsColumn: true,
-			editable: false,
-			store: Ext.create('Rally.data.custom.Store', {
-				data: records
-			}),
+			enableEditing: true,
+			// enableBulkEdit: true,
+			// store: Ext.create('Rally.data.custom.Store', {
+				// data: records
+			// }),
+			store: store,
 			listeners: {
 				load: this._onGridLoaded,
 				scope: this
@@ -93,7 +113,7 @@ Ext.define('CustomApp', {
 				},	
 				{
 					text: 'Risk Likelihood',
-					dataIndex: 'c_RiskLikelihood'
+					dataIndex: 'c_RiskLikelihood',
 				},
 				{
 					text: 'Risk Impact',
@@ -101,7 +121,12 @@ Ext.define('CustomApp', {
 				},
 				{
 					text: 'Exposure (L * I)',
-					dataIndex: 'Exposure'
+					doSort: function(state) {
+						console.log("SORTING");
+					},
+					renderer: function(value,meta,record) {
+						return sean(record);
+					}
 				},
 				{
 					text: 'Risk Status',
