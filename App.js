@@ -95,12 +95,13 @@ Ext.define('CustomApp', {
 						xtype: 'templatecolumn',
 						text: 'ID',
 						dataIndex: 'FormattedID',
-						width: 100,
+						// width: 30,
 						tpl: Ext.create('Rally.ui.renderer.template.FormattedIDTemplate')
 					},
 					{
 						text: 'Name',
 						dataIndex: 'Name',
+						width: 400,
 						flex: 1
 					},
 					{
@@ -116,7 +117,7 @@ Ext.define('CustomApp', {
 					},	
 					{
 						text: 'Risk Likelihood',
-						dataIndex: 'c_RiskLikelihood',
+						dataIndex: 'c_RiskLikelihood'
 					},
 					{
 						text: 'Risk Impact',
