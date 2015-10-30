@@ -35,19 +35,21 @@ Ext.define('CustomApp', {
 		}
 		
 		var records = _.map(data, function(record) {
-			//Perform custom actions with the data here
+			//Perform custom actions with the data here'
+			console.log(data.length);
 			if ('' !== record.get('c_RiskLikelihood')){
 				var regExp = /\(([^)]+)\)/;
-				var matches = regExp.exec(record.get('c_RiskLikelihood'));
-				var likely = matches[1];
-				var sean = Ext.num(likely);
+				var likelymatches = regExp.exec(record.get('c_RiskLikelihood'));
+				var likely = Ext.num(likelymatches[1]);
+				var impactmatches = regExp.exec(record.get('c_RiskImpact'));
+				var impact = Ext.num(impactmatches[1]);
 				//Calculations, etc.
 				return Ext.apply({
-					Sean: Ext.num(sean * sean)
+					Exposure: Ext.num(likely * impact)
 				}, record.getData());
 			}else{
 				return Ext.apply({
-					Sean: 0
+					Exposure: 0
 				}, record.getData());
 			}
 		});
@@ -55,12 +57,16 @@ Ext.define('CustomApp', {
 		this.add({
 			xtype: 'rallygrid',
 			width: '99%',
-			showPagingToolbar: false,
-			showRowActionsColumn: false,
+			showPagingToolbar: true,
+			showRowActionsColumn: true,
 			editable: false,
 			store: Ext.create('Rally.data.custom.Store', {
 				data: records
 			}),
+			listeners: {
+				load: this._onGridLoaded,
+				scope: this
+			},
 			columnCfgs: [
 				{
 					xtype: 'templatecolumn',
@@ -78,7 +84,11 @@ Ext.define('CustomApp', {
 					text: 'Owner',
 					dataIndex: 'Owner',
 					renderer: function(value) {
-						return value._refObjectName;
+						if(!value){
+							return '';
+						}else{
+							return value._refObjectName;
+						}
 					}
 				},	
 				{
@@ -91,7 +101,7 @@ Ext.define('CustomApp', {
 				},
 				{
 					text: 'Exposure (L * I)',
-					dataIndex: 'Sean'
+					dataIndex: 'Exposure'
 				},
 				{
 					text: 'Risk Status',
@@ -106,5 +116,9 @@ Ext.define('CustomApp', {
 				}
 			]
 		});
+	},
+	
+	_onGridLoaded: function(){
+		console.log("LOADED GRID");
 	}
 });
